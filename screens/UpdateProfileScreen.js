@@ -1,35 +1,126 @@
-import { StyleSheet, Text, TouchableOpacity, View, TextInput, InteractionManager } from 'react-native'
-import React, { useState } from 'react'
+import { LogBox, Alert, StyleSheet, Text, TouchableOpacity, View, TextInput, InteractionManager } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import * as firebase from "firebase";
 import "firebase/firestore";
 import { auth } from '../firebase';
 import { useNavigation } from '@react-navigation/native';
-
+LogBox.ignoreAllLogs();
 const UpdateProfileScreen = () => {
     const [firstName, setFirstName] = useState();
     const [lastName, setLastName] = useState();
     const [interest, setInterest] = useState();
     const [age, setAge] = useState();
+    const [grade, setGrade] = useState();
     const currentUserEmail = auth.currentUser?.email;
     const navigation = useNavigation();
+    const firestoreDb = firebase.firestore();
+    const [isTeacher, setIsTeacher] = useState();
+    let goodForUpdate = true;
+
+    async function getUser() {
+        let result;
+        const usersRef = firestoreDb.collection('Users');
+        const snapshot = await usersRef.where('userEmail', '==', currentUserEmail).get();
+
+        if (snapshot.empty) {
+            console.log('No matching documents.');
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            result = doc.data();
+        });
+        return result;
+    }
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', async () => {
+            const user = await getUser();
+            setIsTeacher(user?.isTeacher);
+            goodForUpdate = true;
+        });
+    
+        return () => {
+          unsubscribe;
+        };
+    }, [navigation]);
     const handleInformationUpdate = () => {
-        const firestoreDb = firebase.firestore();
-        firestoreDb
-            .collection('Users')
-            .doc(currentUserEmail)
-            .update({
+        let updatedObj = {};
+        let errors = [];
+        if (typeof isTeacher !== 'undefined' && !isTeacher) {
+            updatedObj = {
                 firstName: firstName,
                 lastName: lastName,
                 interest: interest,
-                age: parseInt(age)
-            })
-            .then(() => {
-                alert('User information successfully updated!');
-            })
-            .catch(error => {
-                alert('Something went wrong while trying to update user information');
-            });
-        navigation.navigate('Profile');
+                age: parseInt(age),
+                grade: parseInt(grade)
+            }
+            for (const [key, value] of Object.entries(updatedObj)) {
+                if (typeof value === 'undefined') {
+                    errors.push(key);
+                }
+            }
+        }
+        if (typeof isTeacher !== 'undefined' && isTeacher) {
+            updatedObj = {
+                firstName: firstName,
+                lastName: lastName,
+                age: parseInt(age),
+            }
+            for (const [key, value] of Object.entries(updatedObj)) {
+                if (typeof value === 'undefined') {
+                    errors.push(key);
+                }
+            }
+        }
+        if (errors.length > 0) {
+            Alert.alert('Missing data', `Value/-s ${[...errors]} need to be provided for profile update`);
+            goodForUpdate = false;
+        }
+        if (goodForUpdate) {
+            firestoreDb
+                .collection('Users')
+                .doc(currentUserEmail)
+                .update(updatedObj)
+                .then(() => {
+                    Alert.alert('Update succesfull', 'User information successfully updated!');
+                })
+                .catch(error => {
+                    Alert.alert('Update failed', 'Something went wrong while trying to update user information');
+                });
+            navigation.navigate('Profile');
+        }
+    }
+    const renderStudentInterestInfo = () => (
+        <View style={{flexDirection: 'row'}}>
+            <Text style={styles.textFont}>Interest: </Text>
+            <TextInput
+                placeholder='Interest'
+                value={interest}
+                onChangeText={text => setInterest(text)}
+                style={styles.input}
+            />
+        </View>
+    )
+    const renderStudentClassInfo = () => (
+        <View style={{flexDirection: 'row'}}>
+            <Text style={styles.textFont}>Class: </Text>
+            <TextInput
+                placeholder='Class'
+                value={grade}
+                onChangeText={text => setGrade(text)}
+                style={styles.input}
+            />
+        </View>
+    )
+    function checkStudentInterests() {
+        if (typeof isTeacher !== 'undefined' && !isTeacher) {
+            return renderStudentInterestInfo();
+        }
+    }
+    function checkStudentClass() {
+        if (typeof isTeacher !== 'undefined' && !isTeacher) {
+            return renderStudentClassInfo();
+        }
     }
     return (
         <View style={styles.container}>
@@ -53,15 +144,6 @@ const UpdateProfileScreen = () => {
                 />
             </View>
             <View style={{flexDirection: 'row'}}>
-                <Text style={styles.textFont}>Interest: </Text>
-                <TextInput
-                    placeholder='Interest'
-                    value={interest}
-                    onChangeText={text => setInterest(text)}
-                    style={styles.input}
-                />
-            </View>
-            <View style={{flexDirection: 'row'}}>
                 <Text style={styles.textFont}>Age: </Text>
                 <TextInput
                     placeholder='Age'
@@ -70,6 +152,8 @@ const UpdateProfileScreen = () => {
                     style={styles.input}
                 />
             </View>
+            { checkStudentInterests() }
+            { checkStudentClass() }
             <TouchableOpacity
                 onPress={handleInformationUpdate}
                 style={styles.button}

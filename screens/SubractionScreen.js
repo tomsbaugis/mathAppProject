@@ -16,7 +16,7 @@ let questions = {};
 let isCorrect;
 let video;
 
-const AdditionScreen = () => {
+const SubtractionScreen = () => {
     const currentUserEmail = auth.currentUser?.email;
     const navigation = useNavigation();
     const firestoreDb = firebase.firestore();
@@ -80,7 +80,7 @@ const AdditionScreen = () => {
         const firstNumber = parseInt(number1);
         const secondNumber = parseInt(number2);
         const resultNumber = parseInt(result);
-        if (firstNumber + secondNumber === resultNumber && typeof firstNumber !== 'undefined' && typeof secondNumber !== 'undefined') {
+        if (firstNumber - secondNumber === resultNumber && typeof firstNumber !== 'undefined' && typeof secondNumber !== 'undefined') {
             isCorrect = true;
             score++;
         } else {
@@ -90,9 +90,9 @@ const AdditionScreen = () => {
             questions[`question-${repetition}`] = {
                 firstNumber: firstNumber,
                 secondNumber: secondNumber,
-                equationType: 'Addition',
+                equationType: 'Subtraction',
                 userInputResult: resultNumber,
-                actualResult: firstNumber + secondNumber,
+                actualResult: firstNumber - secondNumber,
                 isCorrect: isCorrect
             }
         }
@@ -104,8 +104,8 @@ const AdditionScreen = () => {
             cameraRef.stopRecording();
             console.log(await video);
             const firestoreDb = firebase.firestore();
-            firestoreDb.collection("Addition")
-                .doc(`Addition_${Date.now()}`)
+            firestoreDb.collection("Subtraction")
+                .doc(`Subtraction_${Date.now()}`)
                 .set({
                     totalQuestions: 5,
                     correctAnswers: parseInt(score),
@@ -115,13 +115,13 @@ const AdditionScreen = () => {
                     studentEmail: currentUserEmail,
                     grade: grade,
                     dateCompleted: Date.now(),
-                    taskType: 'Equation-Addition'
+                    taskType: 'Equation-Subtraction'
                 })
                 .catch(error => {
                     alert(error);
                 });
             navigation.navigate('Home');
-            Alert.alert('Addition task results', `Completed 5 equations.\nResult: ${score} of 5 questions answered correctly.\nTime elapsed: ${time} seconds.`);
+            Alert.alert('Subtraction task results', `Completed 5 equations.\nResult: ${score} of 5 questions answered correctly.\nTime elapsed: ${time} seconds.`);
         }
     }
     
@@ -148,7 +148,7 @@ const AdditionScreen = () => {
                     style={styles.input}
                     editable={false}
                 />
-                <Text style={styles.textFont}>+</Text>
+                <Text style={styles.textFont}>-</Text>
                 <TextInput
                     value={number2?.toString()}
                     style={styles.input}
@@ -180,7 +180,7 @@ const AdditionScreen = () => {
     )
 }
 
-export default AdditionScreen
+export default SubtractionScreen
 
 const styles = StyleSheet.create({
     camera: {

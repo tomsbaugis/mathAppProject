@@ -1,10 +1,10 @@
-import { KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { LogBox, Alert, KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import React, { useState } from 'react';
 import * as firebase from "firebase";
 import "firebase/firestore";
 import { auth } from '../firebase';
 import { useNavigation } from '@react-navigation/native';
-
+LogBox.ignoreAllLogs();
 const RegisterScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -20,16 +20,21 @@ const RegisterScreen = () => {
                 console.log('Registered new user with email: ', user.email);
                 firestoreDb.collection("Users")
                     .doc(email.toLowerCase())
-                    .set()
+                    .set({
+                        userEmail: email.toLowerCase(),
+                        isTeacher: false,
+                        accountLevel: 'Student'
+                    })
                     .catch(error => {
-                        alert(error);
+                        Alert.alert('Failed to save data', error.message);
                     });
+                Alert.alert('User creation successful', 'User successfully created');
                 navigation.navigate('Login');
             }).catch(error => {
-                alert(error);
+                Alert.alert('Invalid email', error.message);
             })
         } else {
-            alert('Password mismatch', 'Passwords did not match, please try again');
+            Alert.alert('Password mismatch', 'Passwords did not match, please try again');
         }
     }
   return (

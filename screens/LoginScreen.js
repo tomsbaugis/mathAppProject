@@ -1,8 +1,8 @@
-import { KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { LogBox, Alert, KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { auth } from '../firebase';
 import { useNavigation } from '@react-navigation/native';
-
+LogBox.ignoreAllLogs();
 const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -23,7 +23,7 @@ const LoginScreen = () => {
             const user = userCredentials.user;
             console.log('Logged in with: ', user.email);
         }).catch(error => {
-            alert(error);
+            Alert.alert('Aithentification failed', error.message);
         })
     }
   return (
